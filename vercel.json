@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/v1/:path*",
+            "destination": "https://my-openai-gemini-theta-teal.vercel.app/v1/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
