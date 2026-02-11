@@ -1,0 +1,8 @@
+{
+  "name": "智寓",
+  "description": "下一代 AI 驱动的租房平台，提供 VR 看房、智能匹配、电子签约及资产管理服务。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

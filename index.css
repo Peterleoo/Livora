@@ -1,0 +1,71 @@
+/* 
+  Custom Utility Classes for Safe Area Support
+  These classes complement Tailwind CSS by handling the environment variables 
+  for notched devices like iPhone 12 Pro.
+*/
+
+:root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* Padding Safe Area */
+.pb-safe,
+.pb-safe-bottom {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.pt-safe,
+.pt-safe-top {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+.pl-safe-left {
+    padding-left: env(safe-area-inset-left, 0px) !important;
+}
+
+.pr-safe-right {
+    padding-right: env(safe-area-inset-right, 0px) !important;
+}
+
+/* Margin Safe Area */
+.mb-safe-bottom {
+    margin-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+.mt-safe-top {
+    margin-top: env(safe-area-inset-top, 0px) !important;
+}
+
+/* Height Safe Area */
+.h-safe-top {
+    height: env(safe-area-inset-top, 0px) !important;
+}
+
+.h-safe-bottom {
+    height: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* Layout Utilities */
+.min-h-screen-safe {
+    min-height: calc(100vh - (env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)));
+}
+
+/* Scroll Smoothing */
+.ios-scrolling {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Disable selection for UI elements */
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Blur backdrop fix for some mobile browsers */
+.blur-backdrop {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
