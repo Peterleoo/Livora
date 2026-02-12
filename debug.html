@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>PWA Debug</title>
+</head>
+
+<body>
+    <h1>PWA Debug Info</h1>
+    <pre id="debug"></pre>
+    <script>
+        const debug = document.getElementById('debug');
+        const info = {
+            'User Agent': navigator.userAgent,
+            'Standalone Mode': window.matchMedia('(display-mode: standalone)').matches,
+            'VITE_GEMINI_API_KEY': typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_GEMINI_API_KEY ? 'SET' : 'NOT SET') : 'import.meta not available',
+            'VITE_API_BASE_URL': typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_BASE_URL || 'NOT SET') : 'import.meta not available',
+            'Window location': window.location.href,
+            'Document ready state': document.readyState
+        };
+        debug.textContent = JSON.stringify(info, null, 2);
+
+        // Try to load the main app
+        setTimeout(() => {
+            try {
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.src = '/index.tsx';
+                script.onerror = (e) => {
+                    debug.textContent += '\n\nError loading index.tsx: ' + e;
+                };
+                document.body.appendChild(script);
+            } catch (e) {
+                debug.textContent += '\n\nException: ' + e.message;
+            }
+        }, 1000);
+    </script>
+</body>
+
+</html>
