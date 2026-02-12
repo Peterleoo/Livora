@@ -15,6 +15,18 @@
     --animate-scan: scan 2s linear infinite;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    background-color: #f8fafc;
+    color: #1e293b;
+}
+
+:root.dark {
+    background-color: #101922;
+    color: #f8fafc;
+}
+
 @keyframes scan {
     0% {
         transform: translateY(0%);

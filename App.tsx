@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from './components/Icon';
 import { HomeScreen } from './screens/HomeScreen';
@@ -447,6 +447,20 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
   const [redirectAfterLogin, setRedirectAfterLogin] = useState<ScreenName | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('isDarkMode');
+    if (saved !== null) return saved === 'true';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('isDarkMode', String(isDarkMode));
+  }, [isDarkMode]);
 
   // Chat Sessions Storage
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
@@ -899,6 +913,8 @@ const App: React.FC = () => {
               onSwitchMode={handleSwitchMode}
               onChangeCity={() => navigate('CITY_SELECTION')}
               currentCity={currentCity}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
             />
           )}
 
