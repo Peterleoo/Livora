@@ -326,8 +326,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         };
       });
 
-      const apiKey = process.env.API_KEY || "";
-      const baseUrl = process.env.API_BASE_URL || "";
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://generativelanguage.googleapis.com";
 
       let aiResponseText = "";
       const maxRetries = 3;
