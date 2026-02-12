@@ -19,7 +19,10 @@
     html {
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
+      position: fixed;
+      /* 防止 iOS 橡皮筋滚动导致黑边 */
     }
 
     body {
@@ -27,10 +30,9 @@
       background-color: #f8fafc;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
-      /* Prevent body scroll, handle inside app */
       overscroll-behavior: none;
-      /* Prevent bounce */
     }
 
     #root {

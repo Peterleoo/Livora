@@ -447,20 +447,32 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
   const [redirectAfterLogin, setRedirectAfterLogin] = useState<ScreenName | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('isDarkMode');
-    if (saved !== null) return saved === 'true';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
+    return (localStorage.getItem('themeMode') as 'light' | 'dark' | 'system') || 'system';
   });
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const root = document.documentElement;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      const isDark = themeMode === 'dark' || (themeMode === 'system' && mediaQuery.matches);
+      if (isDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+    localStorage.setItem('themeMode', themeMode);
+
+    if (themeMode === 'system') {
+      const handler = () => applyTheme();
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
     }
-    localStorage.setItem('isDarkMode', String(isDarkMode));
-  }, [isDarkMode]);
+  }, [themeMode]);
 
   // Chat Sessions Storage
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
@@ -502,6 +514,8 @@ const App: React.FC = () => {
   const [homeKey, setHomeKey] = useState(0);
   const [homeInitialMessages, setHomeInitialMessages] = useState<Message[]>([]);
   const [homeSessionId, setHomeSessionId] = useState<string | undefined>(undefined);
+  const [homeAutoRespond, setHomeAutoRespond] = useState(false);
+  const [homeContextProperty, setHomeContextProperty] = useState<Property | undefined>(undefined);
 
   // Overlays
   const [showPropertyDetails, setShowPropertyDetails] = useState(false);
@@ -601,10 +615,20 @@ const App: React.FC = () => {
         setHomeKey(prev => prev + 1);
         setHomeInitialMessages([]);
         setHomeSessionId(undefined); // Reset session ID for new chat
+        setHomeAutoRespond(false);
+        setHomeContextProperty(undefined);
       } else if (params?.session) {
         setHomeKey(prev => prev + 1);
         setHomeInitialMessages(params.session.messages || []);
         setHomeSessionId(params.session.id); // Set session ID for history loading
+        setHomeAutoRespond(false);
+        setHomeContextProperty(undefined);
+      } else if (params?.autoRespond) {
+        setHomeKey(prev => prev + 1);
+        setHomeInitialMessages(params.initialMessages || []);
+        setHomeSessionId(undefined);
+        setHomeAutoRespond(true);
+        setHomeContextProperty(params.contextProperty);
       }
     }
 
@@ -784,8 +808,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full bg-black overflow-hidden relative font-sans flex flex-col">
-      <div className="flex-1 w-full bg-white dark:bg-black overflow-hidden relative">
+    <div className="h-full w-full bg-white dark:bg-[#101922] overflow-hidden relative font-sans flex flex-col transition-colors duration-300">
+      <div className="flex-1 w-full bg-white dark:bg-[#101922] overflow-hidden relative">
         <AnimatePresence mode="wait">
           {currentScreen === 'LOGIN' && (
             <motion.div key="login" className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -818,6 +842,8 @@ const App: React.FC = () => {
               userPreferences={userPreferences} // Pass prefs to Home for visual feedback
               onSaveSession={handleSaveSession}
               onExploreMore={() => navigate('EXPLORE')}
+              autoRespond={homeAutoRespond}
+              contextProperty={homeContextProperty}
             />
           )}
 
@@ -913,8 +939,8 @@ const App: React.FC = () => {
               onSwitchMode={handleSwitchMode}
               onChangeCity={() => navigate('CITY_SELECTION')}
               currentCity={currentCity}
-              isDarkMode={isDarkMode}
-              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+              themeMode={themeMode}
+              onThemeChange={setThemeMode}
             />
           )}
 
@@ -950,7 +976,25 @@ const App: React.FC = () => {
                   setShowSigning(true);
                 }
               }}
-              onConsult={() => setShowChat(true)}
+              onConsult={() => {
+                const prop = getSelectedProperty();
+                if (prop) {
+                  setShowPropertyDetails(false);
+                  navigate('HOME', {
+                    autoRespond: true,
+                    contextProperty: prop,
+                    initialMessages: [{
+                      id: Date.now().toString(),
+                      type: 'TEXT',
+                      text: `帮我介绍一下这套房源：${prop.title}`,
+                      sender: 'user',
+                      timestamp: new Date()
+                    }]
+                  });
+                } else {
+                  setShowChat(true);
+                }
+              }}
             />
           </motion.div>
         )}

@@ -20,6 +20,8 @@ interface HomeScreenProps {
   onExploreMore: () => void;
   initialMessages?: Message[];
   initialSessionId?: string;
+  autoRespond?: boolean;
+  contextProperty?: Property;
 }
 
 // 1. Property Card (Premium Light Version)
@@ -28,7 +30,7 @@ const PropertyCard: React.FC<{ item: Property; onClick: () => void }> = ({ item,
     whileHover={{ y: -4 }}
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
-    className="bg-white/80 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden border border-white/40 min-w-[240px] shrink-0 transition-all"
+    className="bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden border border-white/40 dark:border-slate-800 min-w-[240px] shrink-0 transition-all"
   >
     <div className="h-32 relative">
       <img src={item.image} className="w-full h-full object-cover" alt={item.title} />
@@ -38,10 +40,10 @@ const PropertyCard: React.FC<{ item: Property; onClick: () => void }> = ({ item,
       </div>
     </div>
     <div className="p-3">
-      <h4 className="font-bold text-slate-800 text-sm truncate">{item.title}</h4>
+      <h4 className="font-bold text-slate-800 dark:text-white text-sm truncate">{item.title}</h4>
       <div className="flex justify-between items-center mt-2">
-        <span className="text-indigo-600 font-bold text-sm">¥{item.price}<span className="text-xs font-normal text-slate-400">/月</span></span>
-        <span className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-50 rounded-md">{item.specs.area}㎡</span>
+        <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">¥{item.price}<span className="text-xs font-normal text-slate-400">/月</span></span>
+        <span className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-50 dark:bg-slate-800 rounded-md">{item.specs.area}㎡</span>
       </div>
     </div>
   </motion.div>
@@ -52,17 +54,17 @@ const ContractCard: React.FC<{ item: Property; onSign: () => void; isSigned?: bo
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
-    className={`bg-white/80 backdrop-blur-xl rounded-[24px] shadow-xl overflow-hidden border mt-2 transition-all duration-500 ${isSigned ? 'border-emerald-200' : 'border-indigo-100'} max-w-[300px]`}
+    className={`bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-xl rounded-[24px] shadow-xl overflow-hidden border mt-2 transition-all duration-500 ${isSigned ? 'border-emerald-200 dark:border-emerald-900/30' : 'border-indigo-100 dark:border-indigo-900/30'} max-w-[300px]`}
   >
     <div className="p-4 flex gap-4">
       <img src={item.image} className="w-16 h-16 rounded-2xl object-cover shadow-sm" alt={item.title} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <h4 className="font-bold text-slate-900 text-sm truncate">{item.title}</h4>
+          <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{item.title}</h4>
           {isSigned && <Icon name="check_circle" size={16} className="text-emerald-500" />}
         </div>
         <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">{item.location}</p>
-        <div className="text-indigo-600 font-bold text-xs mt-1">¥{item.price}<span className="text-slate-400 font-normal">/月</span></div>
+        <div className="text-indigo-600 dark:text-indigo-400 font-bold text-xs mt-1">¥{item.price}<span className="text-slate-400 font-normal">/月</span></div>
       </div>
     </div>
 
@@ -70,7 +72,7 @@ const ContractCard: React.FC<{ item: Property; onSign: () => void; isSigned?: bo
       {isSigned ? (
         <button
           onClick={onPay}
-          className="w-full bg-slate-900 text-white text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
+          className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
         >
           <Icon name="credit_card" size={14} />
           已签约，立即支付
@@ -93,7 +95,7 @@ const DailyPickSmallCard: React.FC<{ item: Property; onClick: () => void }> = ({
   <motion.div
     whileTap={{ scale: 0.96 }}
     onClick={onClick}
-    className="inline-block w-[260px] whitespace-normal align-top mr-4 bg-white rounded-[24px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 cursor-pointer snap-center relative overflow-hidden group"
+    className="inline-block w-[260px] whitespace-normal align-top mr-4 bg-white dark:bg-[#1a1a1a] rounded-[24px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800 cursor-pointer snap-center relative overflow-hidden group"
   >
     <div className="w-full h-36 rounded-2xl overflow-hidden relative mb-3">
       <motion.img
@@ -114,13 +116,13 @@ const DailyPickSmallCard: React.FC<{ item: Property; onClick: () => void }> = ({
       </div>
     </div>
 
-    <h3 className="text-sm font-bold text-slate-800 truncate mb-1">{item.title}</h3>
+    <h3 className="text-sm font-bold text-slate-800 dark:text-white truncate mb-1">{item.title}</h3>
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-1">
         <Icon name="location_on" size={10} className="text-slate-400" />
         <span className="text-[10px] text-slate-400 font-medium">{item.location}</span>
       </div>
-      <span className="text-xs font-bold text-indigo-600">¥{item.price}</span>
+      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">¥{item.price}</span>
     </div>
   </motion.div>
 );
@@ -168,7 +170,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onSaveSession,
   onExploreMore,
   initialMessages = [],
-  initialSessionId
+  initialSessionId,
+  autoRespond = false,
+  contextProperty
 }) => {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
 
@@ -177,7 +181,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [lastRecommended, setLastRecommended] = useState<Property[]>([]);
+  const [lastRecommended, setLastRecommended] = useState<Property[]>(contextProperty ? [contextProperty] : []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -246,23 +250,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     });
   };
 
-  const handleSend = async () => {
-    if (!inputValue.trim()) return;
-
-    const userText = inputValue;
-    setInputValue('');
-
-    const newUserMsg: Message = {
-      id: Date.now().toString(),
-      type: 'TEXT',
-      text: userText,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, newUserMsg]);
-    setIsTyping(true);
-
-    // ... inside handleSend
+  const generateResponse = async (userText: string, currentMessages: Message[]) => {
     try {
       const lowerInput = userText.toLowerCase();
       const signKeywords = ['签', '租', '定', 'sign', 'book', 'contract'];
@@ -277,17 +265,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         if (targetIndex !== -1 && lastRecommended[targetIndex]) {
           const targetProp = lastRecommended[targetIndex];
-          setIsTyping(false);
-          const signMsg: Message = {
-            id: Date.now() + 'sign',
-            type: 'CONTRACT_CARD',
-            sender: 'ai',
+          return {
+            type: 'CONTRACT_CARD' as const,
             text: `好的，已为您准备好**${targetProp.title}**的电子合约。请确认房源信息无误后，点击下方按钮开始签约。`,
-            timestamp: new Date(),
             data: targetProp
           };
-          setMessages(prev => [...prev, signMsg]);
-          return;
         }
       }
 
@@ -306,15 +288,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       const contextString = relevantProperties.length > 0
         ? `\n\n[检索到的相关房源数据 (参考这些数据回答，如果合适请推荐)]: ${JSON.stringify(contextData)}`
-        : `\n\n`; // Empty if no search results, don't force generic unless needed
+        : `\n\n`;
 
       const systemPrompt = `你是一个专业的AI租房顾问“智寓AI”。
       用户当前的城市是：${currentCity}。你的所有推荐必须严格限制在这个城市。
       请语气亲切、专业。回答请简练，不要长篇大论。
       **重要**：如果用户询问之前推荐过的房源（如“这套”、“第一套”），请根据上下文历史中的[User was shown properties]信息进行回答。`;
 
-      // Build History
-      const historyPayload = messages.slice(-10).map(msg => {
+      const historyPayload = currentMessages.slice(-10).map(msg => {
         let content = msg.text || '';
         if (msg.sender === 'ai' && msg.type === 'PROPERTY_CARDS' && Array.isArray(msg.data)) {
           const props = msg.data as Property[];
@@ -326,103 +307,138 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         };
       });
 
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://generativelanguage.googleapis.com";
+      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || "";
+      const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || "https://generativelanguage.googleapis.com";
 
       let aiResponseText = "";
       const maxRetries = 3;
 
-      try {
-        let response;
-        for (let i = 0; i < maxRetries; i++) {
-          try {
-            response = await fetch(`${baseUrl}/v1/chat/completions`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-              },
-              body: JSON.stringify({
-                model: 'gemini-3-flash-preview',
-                messages: [
-                  { role: 'system', content: systemPrompt },
-                  ...historyPayload, // Inject History
-                  { role: 'user', content: userText + contextString }
-                ],
-                stream: false
-              })
-            });
+      let response;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          response = await fetch(`${baseUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'gemini-1.5-flash',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...historyPayload,
+                { role: 'user', content: userText + contextString }
+              ],
+              stream: false
+            })
+          });
 
-            if (response.status === 503) {
-              // ... retries
-              console.warn(`Attempt ${i + 1} failed with 503. Retrying...`);
-              await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1)));
-              continue;
-            }
-
-            if (!response.ok) {
-              const errData = await response.json();
-              throw new Error(errData.error?.message || `HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
-            aiResponseText = data.choices[0]?.message?.content || "";
-            break;
-          } catch (networkErr: any) {
-            if (i === maxRetries - 1) throw networkErr;
-            console.warn(`Network attempt ${i + 1} failed. Retrying...`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          if (response.status === 503) {
+            await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1)));
+            continue;
           }
-        }
-        // ... (rest of error handling)
 
-        if (!aiResponseText && !response?.ok) {
-          throw new Error("Service temporarily unavailable after retries");
-        }
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error?.message || `HTTP ${response.status}`);
+          }
 
-      } catch (err: any) {
-        console.error("API Error details:", err);
-        if (err.message?.includes('429')) {
-          aiResponseText = "抱歉，AI 思考次数已达免费额度上限。请稍等一分钟后再试。";
-        } else if (err.message?.includes('503') || err.message?.includes('overloaded')) {
-          aiResponseText = "抱歉，当前 AI 服务繁忙（Google Gemini 模型高负载）。请稍后再试。";
-        } else {
-          aiResponseText = `抱歉，通讯出现状况: ${err.message || "未知错误"}`;
+          const data = await response.json();
+          aiResponseText = data.choices[0]?.message?.content || "";
+          break;
+        } catch (networkErr: any) {
+          if (i === maxRetries - 1) throw networkErr;
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
-      setIsTyping(false);
-      let newMsgs: Message[] = [];
-      newMsgs.push({
-        id: Date.now() + '1',
-        type: 'TEXT',
+      return {
+        type: 'TEXT' as const,
         text: aiResponseText || '抱歉，我现在有点繁忙，请稍后再试。',
-        sender: 'ai',
-        timestamp: new Date()
-      });
+        data: relevantProperties.length > 0 ? relevantProperties : undefined
+      };
 
-      if (relevantProperties.length > 0) {
-        newMsgs.push({
-          id: Date.now() + '2',
-          type: 'PROPERTY_CARDS',
-          sender: 'ai',
-          timestamp: new Date(),
-          data: relevantProperties
-        });
-      }
-      setMessages(prev => [...prev, ...newMsgs]);
-
-    } catch (error) {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now() + 'err',
-        type: 'TEXT',
-        text: '网络连接似乎有点问题。',
-        sender: 'ai',
-        timestamp: new Date()
-      }]);
+    } catch (err: any) {
+      console.error("AI Error:", err);
+      let errorMsg = "抱歉，通讯出现状况，请稍后再试。";
+      if (err.message?.includes('429')) errorMsg = "抱歉，AI 思考次数已达上限。请稍后再试。";
+      return { type: 'TEXT' as const, text: errorMsg };
     }
   };
+
+  const handleSend = async () => {
+    if (!inputValue.trim()) return;
+    const userText = inputValue;
+    setInputValue('');
+
+    const newUserMsg: Message = {
+      id: Date.now().toString(),
+      type: 'TEXT',
+      text: userText,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    const updatedMessages = [...messages, newUserMsg];
+    setMessages(updatedMessages);
+    setIsTyping(true);
+
+    const result = await generateResponse(userText, updatedMessages);
+    setIsTyping(false);
+
+    const aiMsgs: Message[] = [{
+      id: (Date.now() + 1).toString(),
+      type: result.type,
+      text: result.text,
+      sender: 'ai',
+      timestamp: new Date(),
+      data: result.data
+    }];
+
+    if (result.type === 'TEXT' && result.data && Array.isArray(result.data)) {
+      aiMsgs.push({
+        id: (Date.now() + 2).toString(),
+        type: 'PROPERTY_CARDS',
+        sender: 'ai',
+        timestamp: new Date(),
+        data: result.data
+      });
+    }
+
+    setMessages(prev => [...prev, ...aiMsgs]);
+  };
+
+  useEffect(() => {
+    if (autoRespond && messages.length > 0 && messages.some(m => m.sender === 'user')) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.sender === 'user' && !messages.some(m => m.sender === 'ai' && m.id > lastMsg.id)) {
+        const triggerAuto = async () => {
+          setIsTyping(true);
+          const result = await generateResponse(lastMsg.text, messages);
+          setIsTyping(false);
+          const aiMsgs: Message[] = [{
+            id: (Date.now() + 1).toString(),
+            type: result.type,
+            text: result.text,
+            sender: 'ai',
+            timestamp: new Date(),
+            data: result.data
+          }];
+          if (result.type === 'TEXT' && result.data && Array.isArray(result.data)) {
+            aiMsgs.push({
+              id: (Date.now() + 2).toString(),
+              type: 'PROPERTY_CARDS',
+              sender: 'ai',
+              timestamp: new Date(),
+              data: result.data
+            });
+          }
+          setMessages(prev => [...prev, ...aiMsgs]);
+        };
+        triggerAuto();
+      }
+    }
+  }, [autoRespond]);
 
   const VoiceOverlay = () => (
     <motion.div
@@ -480,9 +496,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             key={i}
             whileTap={{ scale: 0.98 }}
             onClick={() => { setInputValue(text); }}
-            className="w-full bg-white/60 hover:bg-white border border-slate-100 px-5 py-4 rounded-xl text-left shadow-sm hover:shadow-md transition-all group"
+            className="w-full bg-white/60 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 px-5 py-4 rounded-xl text-left shadow-sm hover:shadow-md transition-all group"
           >
-            <span className="text-sm text-slate-700 font-medium leading-relaxed group-hover:text-indigo-900 transition-colors">
+            <span className="text-sm text-slate-700 dark:text-slate-200 font-medium leading-relaxed group-hover:text-indigo-900 dark:group-hover:text-white transition-colors">
               {text}
             </span>
           </motion.button>
@@ -494,14 +510,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const DailyPickCarousel = () => (
     <div className="w-full mb-8 mt-4">
       <div className="px-6 mb-4 flex justify-between items-end">
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">今日精选</h2>
-        <button onClick={onExploreMore} className="text-xs font-bold text-indigo-600 active:opacity-70">查看更多</button>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">今日精选</h2>
+        <button onClick={onExploreMore} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 active:opacity-70">查看更多</button>
       </div>
       <div className="overflow-x-auto no-scrollbar px-6 pb-2 snap-x snap-mandatory whitespace-nowrap">
         {properties.length > 0 ? properties.map(p => (
           <DailyPickSmallCard key={p.id} item={p} onClick={() => onPropertyClick(p.id)} />
         )) : (
-          <div className="w-full text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+          <div className="w-full text-center py-10 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
             <p className="text-sm text-slate-400">该城市暂无房源</p>
           </div>
         )}
@@ -511,19 +527,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
 
   const Header = () => (
-    <header className="flex justify-between items-center px-6 py-5 pt-safe-top absolute top-0 left-0 w-full bg-transparent z-30 pointer-events-none">
+    <header className="flex justify-between items-center px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pb-4 sticky top-0 left-0 w-full bg-[#f8fafc]/80 dark:bg-[#101922]/80 backdrop-blur-xl z-30 border-b border-slate-100 dark:border-slate-800">
       <button
         onClick={onOpenMenu}
-        className="group flex flex-col justify-center items-start gap-1 p-3 -ml-3 rounded-full hover:bg-white/40 transition-all active:scale-95 pointer-events-auto"
+        className="group flex flex-col justify-center items-start gap-1 p-3 -ml-3 rounded-full hover:bg-white/40 transition-all active:scale-95"
       >
-        <span className="w-6 h-0.5 bg-slate-900 rounded-full group-hover:w-7 transition-all"></span>
-        <span className="w-4 h-0.5 bg-slate-900 rounded-full group-hover:w-6 transition-all"></span>
+        <span className="w-6 h-0.5 bg-slate-900 dark:bg-white rounded-full group-hover:w-7 transition-all"></span>
+        <span className="w-4 h-0.5 bg-slate-900 dark:bg-white rounded-full group-hover:w-6 transition-all"></span>
       </button>
 
       {userPreferences && (
-        <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm pointer-events-auto">
+        <div className="flex items-center gap-2 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/50 dark:border-slate-700 shadow-sm">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-          <span className="text-[10px] font-bold text-slate-600">
+          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
             寻找: {userPreferences.budgetRange[1] < 100000 ? `${userPreferences.budgetRange[1]}元以内` : '不限'}
           </span>
         </div>
@@ -534,7 +550,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   if (messages.length > 0) {
     return (
-      <div className="flex flex-col h-[100dvh] bg-[#f8fafc] relative overflow-hidden">
+      <div className="flex flex-col h-[100dvh] bg-[#f8fafc] dark:bg-[#101922] relative overflow-hidden">
         <Header />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-6 px-5 min-h-0">
@@ -543,19 +559,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex flex-col max-w-[90%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                   {msg.sender === 'user' ? (
-                    <div className="bg-indigo-600 text-white px-5 py-4 rounded-[28px] rounded-br-lg text-[15px] leading-relaxed shadow-lg shadow-indigo-100">
+                    <div className="bg-indigo-600 text-white px-5 py-4 rounded-[28px] rounded-br-lg text-[15px] leading-relaxed shadow-lg shadow-indigo-100 dark:shadow-none">
                       {msg.text}
                     </div>
                   ) : (
                     <>
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-500">
+                        <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-indigo-500">
                           <Icon name="smart_toy" size={18} />
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">智寓 AI</span>
                       </div>
                       {msg.text && (
-                        <div className="text-slate-800 text-[15.5px] leading-8 mb-4 px-2">
+                        <div className="text-slate-800 dark:text-slate-100 text-[15.5px] leading-8 mb-4 px-2">
                           {formatMessageText(msg.text)}
                         </div>
                       )}
@@ -588,16 +604,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="px-6 pb-2 bg-[#f8fafc] flex-shrink-0">
+        <div className="px-6 pb-2-safe bg-[#f8fafc] dark:bg-[#101922] flex-shrink-0 pt-2 pb-safe-bottom">
           <motion.div
             layoutId="orb-input"
-            className="flex items-end gap-3 bg-white rounded-[32px] px-3 py-2.5 shadow-xl shadow-slate-200/50 border border-white mb-2"
+            className="flex items-end gap-3 bg-white dark:bg-slate-800 rounded-[32px] px-3 py-2.5 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-700 mb-2"
           >
             <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={`在${currentCity}找房...`}
-              className="flex-1 min-w-0 bg-transparent border-none outline-none text-slate-900 placeholder-slate-300 text-[16px] py-3 pl-3 max-h-24 resize-none"
+              className="flex-1 min-w-0 bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-500 text-[16px] py-3 pl-3 max-h-24 resize-none"
               rows={1}
             />
             <div className="flex items-center gap-2 mb-1 shrink-0">
@@ -606,7 +622,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <Icon name="arrow_upward" size={20} />
                 </button>
               ) : (
-                <button onClick={handleStartListening} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors shrink-0">
+                <button onClick={handleStartListening} className="w-10 h-10 bg-slate-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors shrink-0">
                   <Icon name="mic" size={22} />
                 </button>
               )}
@@ -620,13 +636,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#f8fafc] relative">
+    <div className="flex flex-col h-[100dvh] bg-[#f8fafc] dark:bg-[#101922] relative">
       <Header />
 
       <div className="flex-1 overflow-y-auto no-scrollbar w-full min-h-0">
         <div className="min-h-full flex flex-col items-center justify-center py-6">
           <div className="mb-8 flex flex-col items-center mt-12">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">你好，我是智寓</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">你好，我是智寓</h1>
             <p className="text-slate-400 text-sm mt-2 font-medium">您的 AI 租房专家</p>
           </div>
 
@@ -638,7 +654,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="px-6 pb-safe-bottom flex-shrink-0">
         <motion.div
           layoutId="orb-input"
-          className={`bg-white/80 backdrop-blur-2xl rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white p-2.5 pl-8 flex items-center gap-3 relative group overflow-hidden mb-6 transition-all duration-300 ${isVoiceMode ? 'pl-2.5' : 'pl-8'}`}
+          className={`bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white dark:border-slate-700 p-2.5 pl-8 flex items-center gap-3 relative group overflow-hidden mb-6 transition-all duration-300 ${isVoiceMode ? 'pl-2.5' : 'pl-8'}`}
         >
           {/* Neon Glow Effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-cyan-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
@@ -654,7 +670,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </button>
               <button
                 onClick={() => setIsVoiceMode(false)}
-                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
+                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
               >
                 <Icon name="keyboard" size={24} />
               </button>
@@ -667,7 +683,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={userPreferences ? `寻找 ${userPreferences.workLocation} 附近...` : `输入任意找房需求...`}
-                className="flex-1 min-w-0 text-[16px] font-medium placeholder-slate-300 text-slate-900 outline-none h-14 bg-transparent"
+                className="flex-1 min-w-0 text-[16px] font-medium placeholder-slate-300 dark:placeholder-slate-500 text-slate-900 dark:text-white outline-none h-14 bg-transparent"
               />
 
               <div className="flex items-center gap-3 pr-3 shrink-0">
@@ -687,7 +703,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 ) : (
                   <button
                     onClick={() => setIsVoiceMode(true)}
-                    className="w-12 h-12 rounded-[22px] bg-slate-900 flex items-center justify-center text-white shadow-xl active:scale-90 transition-all shrink-0"
+                    className="w-12 h-12 rounded-[22px] bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-slate-900 shadow-xl active:scale-90 transition-all shrink-0"
                   >
                     <Icon name="mic" size={20} />
                   </button>

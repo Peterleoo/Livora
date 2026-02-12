@@ -93,7 +93,7 @@ export const TenantHomeScreen: React.FC<TenantHomeScreenProps> = ({ onSwitchToSe
                   <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
                      <Icon name="priority_high" size={16} className="text-red-500" />
                   </div>
-                  <span className="text-xs font-bold text-red-600">您有 {pendingBillCount} 笔账单待支付</span>
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">您有 {pendingBillCount} 笔账单待支付</span>
                </div>
                <Icon name="chevron_right" size={16} className="text-red-400" />
             </div>

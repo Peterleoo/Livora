@@ -17,12 +17,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* 基础颜色变量适配 */
 :root {
     background-color: #f8fafc;
     color: #1e293b;
 }
 
-:root.dark {
+/* 强制通过 .dark 类名控制背景和文字 */
+.dark {
     background-color: #101922;
     color: #f8fafc;
 }
@@ -53,12 +55,21 @@
 /* Padding Safe Area */
 .pb-safe,
 .pb-safe-bottom {
-    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
 .pt-safe,
 .pt-safe-top {
     padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+/* 增加专门的容器适配类 */
+.pt-safe-card {
+    padding-top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+}
+
+.pb-safe-card {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 .pl-safe-left {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Icon } from '../components/Icon';
 
 interface SettingsScreenProps {
@@ -8,8 +9,8 @@ interface SettingsScreenProps {
   onSwitchMode: (mode: 'SEEKER' | 'TENANT') => void;
   onChangeCity: () => void;
   currentCity: string;
-  isDarkMode: boolean;
-  onToggleDarkMode: () => void;
+  themeMode: 'light' | 'dark' | 'system';
+  onThemeChange: (mode: 'light' | 'dark' | 'system') => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -19,13 +20,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onSwitchMode,
   onChangeCity,
   currentCity,
-  isDarkMode,
-  onToggleDarkMode
+  themeMode,
+  onThemeChange
 }) => {
   const MenuItem = ({ icon, label, subtext, onClick }: { icon: string, label: string, subtext?: string, onClick?: () => void }) => (
     <div
       onClick={onClick}
-      className={`flex items-center justify-between p-4 bg-white dark:bg-[#1a1a1a] border-b border-slate-50 dark:border-slate-800 last:border-none transition-colors ${onClick ? 'active:bg-slate-50 cursor-pointer' : ''}`}
+      className={`flex items-center justify-between p-4 bg-white dark:bg-[#1a1a1a] border-b border-slate-50 dark:border-slate-800 last:border-none transition-colors ${onClick ? 'active:bg-slate-50 dark:active:bg-slate-800 cursor-pointer' : ''}`}
     >
       <div className="flex items-center gap-3">
         <Icon name={icon} size={22} className="text-slate-500" />
@@ -35,6 +36,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {subtext && <span className="text-xs text-slate-400">{subtext}</span>}
         <Icon name="chevron_right" size={18} className="text-slate-300" />
       </div>
+    </div>
+  );
+
+  const ThemeCapsule = () => (
+    <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex gap-1 relative overflow-hidden">
+      {(['light', 'dark', 'system'] as const).map((mode) => (
+        <button
+          key={mode}
+          onClick={() => onThemeChange(mode)}
+          className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl transition-all relative z-10 ${themeMode === mode ? 'text-indigo-600' : 'text-slate-400 font-medium'
+            }`}
+        >
+          {themeMode === mode && (
+            <motion.div
+              layoutId="themeTab"
+              className="absolute inset-0 bg-white dark:bg-slate-700 shadow-sm rounded-xl"
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          )}
+          <span className="relative z-20 flex flex-col items-center gap-1">
+            <Icon name={mode === 'light' ? 'light_mode' : mode === 'dark' ? 'dark_mode' : 'settings_brightness'} size={18} />
+            <span className="text-[10px] font-bold uppercase">
+              {mode === 'light' ? '日间' : mode === 'dark' ? '夜间' : '自动'}
+            </span>
+          </span>
+        </button>
+      ))}
     </div>
   );
 
@@ -88,12 +116,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
+        <div>
+          <h3 className="text-xs font-bold text-slate-400 uppercase ml-2 mb-2">界面主题</h3>
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-4 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="palette" size={20} className="text-indigo-500" />
+              <span className="text-sm font-bold text-slate-900 dark:text-white">外观模式</span>
+            </div>
+            <ThemeCapsule />
+            <p className="text-[10px] text-slate-400 italic px-2">
+              选择“自动”将跟随 iOS/Android 系统外观设置动态切换。
+            </p>
+          </div>
+        </div>
+
         {/* App Settings */}
         <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase ml-2 mb-2">应用</h3>
+          <h3 className="text-xs font-bold text-slate-400 uppercase ml-2 mb-2">通用设置</h3>
           <div className="rounded-xl overflow-hidden shadow-sm">
             <MenuItem icon="language" label="语言" subtext="简体中文" />
-            <MenuItem icon="contrast" label="外观" subtext={isDarkMode ? '夜间模式' : '日间模式'} onClick={onToggleDarkMode} />
             <MenuItem icon="notifications" label="通知设置" />
           </div>
         </div>
@@ -112,7 +153,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* Danger Zone */}
         <button
           onClick={onLogout}
-          className="w-full bg-white dark:bg-[#1a1a1a] text-red-500 font-medium py-3.5 rounded-xl shadow-sm active:bg-slate-50 transition-colors"
+          className="w-full bg-white dark:bg-[#1a1a1a] text-red-500 font-medium py-3.5 rounded-xl shadow-sm active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
         >
           退出登录
         </button>
