@@ -1,6 +1,29 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --font-sans: Inter, sans-serif;
+    --font-display: Manrope, sans-serif;
+
+    --color-primary: #137fec;
+    --color-primary-dark: #0b5cb5;
+    --color-primary-light: #e0f0ff;
+    --color-secondary: #6366f1;
+    --color-dark-bg: #101922;
+    --color-dark-surface: #1e2936;
+
+    --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    --animate-scan: scan 2s linear infinite;
+}
+
+@keyframes scan {
+    0% {
+        transform: translateY(0%);
+    }
+
+    100% {
+        transform: translateY(100%);
+    }
+}
 
 /* 
   Custom Utility Classes for Safe Area Support
