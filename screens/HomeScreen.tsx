@@ -527,7 +527,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
 
   const Header = () => (
-    <header className="flex justify-between items-center px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pb-4 sticky top-0 left-0 w-full bg-[#f8fafc]/80 dark:bg-[#101922]/80 backdrop-blur-xl z-30 border-b border-slate-100 dark:border-slate-800">
+    <header className="flex justify-between items-center px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pb-4 sticky top-0 left-0 w-full bg-white/70 dark:bg-[#101922]/70 backdrop-blur-xl z-30 border-b border-slate-100/50 dark:border-slate-800/50">
       <button
         onClick={onOpenMenu}
         className="group flex flex-col justify-center items-start gap-1 p-3 -ml-3 rounded-full hover:bg-white/40 transition-all active:scale-95"
@@ -651,10 +651,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </div>
 
-      <div className="px-6 pb-safe-bottom flex-shrink-0">
+      <div className="px-6 pb-safe-bottom flex-shrink-0 relative z-30">
         <motion.div
           layoutId="orb-input"
-          className={`bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white dark:border-slate-700 p-2.5 pl-8 flex items-center gap-3 relative group overflow-hidden mb-6 transition-all duration-300 ${isVoiceMode ? 'pl-2.5' : 'pl-8'}`}
+          className={`bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-white dark:border-slate-700 p-2.5 pl-8 flex items-center gap-3 relative group overflow-hidden mb-6 transition-all duration-300 ${isVoiceMode ? 'pl-2.5' : 'pl-8'}`}
         >
           {/* Neon Glow Effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-cyan-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />

@@ -247,9 +247,9 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                </AnimatePresence>
             </div>
 
-            {/* 3. Sticky Action Bar */}
-            <div className="absolute bottom-0 left-0 right-0 px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-white dark:from-[#101922] via-white/95 dark:via-[#101922]/95 to-transparent z-40 border-t border-slate-50 dark:border-slate-800 backdrop-blur-xl">
-               <div className="flex items-center gap-4 pb-safe-bottom">
+            {/* 3. Sticky Action Bar - Floating Glass Version */}
+            <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-2xl rounded-[32px] z-40 border border-white dark:border-slate-800 shadow-2xl">
+               <div className="flex items-center gap-4">
                   <div className="flex-1">
                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">月租金</div>
                      <div className="text-2xl font-black text-slate-900 dark:text-white">¥{property.price.toLocaleString()}<span className="text-sm font-medium text-slate-400">/月</span></div>
@@ -258,7 +258,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                   <motion.button
                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                      onClick={onConsult}
-                     className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200"
+                     className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
                   >
                      <Icon name="chat" />
                   </motion.button>
