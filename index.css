@@ -48,6 +48,15 @@
     height: env(safe-area-inset-bottom, 0px) !important;
 }
 
+/* Little Screen Optimizations (iPhone SE / 8) */
+@media (max-height: 700px) {
+
+    .pb-safe,
+    .pb-safe-bottom {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
+
 /* Layout Utilities */
 .min-h-screen-safe {
     min-height: calc(100vh - (env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)));

@@ -48,6 +48,7 @@ export interface ChatSession {
   preview: string;
   date: string;
   tags: string[];
+  messages?: Message[]; // Added to store session history
 }
 
 // Sub-types for Management

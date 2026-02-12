@@ -100,7 +100,7 @@ export const TenantHomeScreen: React.FC<TenantHomeScreenProps> = ({ onSwitchToSe
          )}
 
          {/* Main Content */}
-         <div className="flex-1 overflow-y-auto px-5 z-10 pb-safe-bottom no-scrollbar">
+         <div className="flex-1 overflow-y-auto px-5 z-10 pb-safe-bottom no-scrollbar min-h-0">
 
             {/* 1. Renting Card */}
             <div className="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-xl shadow-emerald-900/10 mb-6 relative overflow-hidden">
@@ -127,17 +127,17 @@ export const TenantHomeScreen: React.FC<TenantHomeScreenProps> = ({ onSwitchToSe
                   <button
                      onClick={handleOpenDoor}
                      className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 relative z-10 ${doorState === 'UNLOCKED'
-                           ? 'bg-green-500 shadow-green-500/40 scale-105'
-                           : doorState === 'UNLOCKING'
-                              ? 'bg-emerald-600 shadow-emerald-600/40 animate-pulse'
-                              : 'bg-white dark:bg-slate-700 shadow-slate-200 dark:shadow-black/50 active:scale-95'
+                        ? 'bg-green-500 shadow-green-500/40 scale-105'
+                        : doorState === 'UNLOCKING'
+                           ? 'bg-emerald-600 shadow-emerald-600/40 animate-pulse'
+                           : 'bg-white dark:bg-slate-700 shadow-slate-200 dark:shadow-black/50 active:scale-95'
                         }`}
                   >
                      <Icon
                         name={doorState === 'UNLOCKED' ? 'lock_open' : 'lock'}
                         size={36}
                         className={`transition-colors ${doorState === 'UNLOCKED' ? 'text-white' :
-                              doorState === 'UNLOCKING' ? 'text-white/80' : 'text-emerald-600 dark:text-emerald-400'
+                           doorState === 'UNLOCKING' ? 'text-white/80' : 'text-emerald-600 dark:text-emerald-400'
                            }`}
                      />
                      {/* Ripple Effect */}

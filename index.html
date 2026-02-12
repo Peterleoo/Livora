@@ -51,9 +51,31 @@
     }
   </script>
   <style>
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       -webkit-tap-highlight-color: transparent;
       background-color: #f8fafc;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      /* Prevent body scroll, handle inside app */
+      overscroll-behavior: none;
+      /* Prevent bounce */
+    }
+
+    #root {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      /* Mobile viewport height fix */
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .no-scrollbar::-webkit-scrollbar {

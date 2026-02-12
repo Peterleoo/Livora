@@ -219,7 +219,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
             </header>
 
             {/* Property List */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0">
                 <div className="space-y-6 pb-20">
                     {filteredProperties.length > 0 ? filteredProperties.map(item => {
                         const isVR = item.tags.includes('VR看房');
@@ -365,7 +365,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-8">
+                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-8 min-h-0">
 
                                 {/* 0. Location (Region & Business District) - New Design */}
                                 <div>

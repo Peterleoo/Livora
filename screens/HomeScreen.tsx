@@ -16,7 +16,10 @@ interface HomeScreenProps {
   pendingBillCount?: number;
   currentCity: string;
   userPreferences?: UserPreferences;
-  onSaveSession: (messages: Message[]) => void;
+  onSaveSession: (messages: Message[], sessionId?: string) => string;
+  onExploreMore: () => void;
+  initialMessages?: Message[];
+  initialSessionId?: string;
 }
 
 // 1. Property Card (Premium Light Version)
@@ -162,21 +165,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   pendingBillCount = 0,
   currentCity,
   userPreferences,
-  onSaveSession
+  onSaveSession,
+  onExploreMore,
+  initialMessages = [],
+  initialSessionId
 }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<Property[]>([]);
-  const [currentScenario, setCurrentScenario] = useState(SUGGESTION_SCENARIOS[0]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const randomScenario = SUGGESTION_SCENARIOS[Math.floor(Math.random() * SUGGESTION_SCENARIOS.length)];
-    setCurrentScenario(randomScenario);
-  }, []);
 
   useEffect(() => {
     if (signedPropertyId) {
@@ -194,9 +197,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
     if (messages.length > 0) {
-      onSaveSession(messages);
+      const newId = onSaveSession(messages, sessionId);
+      if (newId && newId !== sessionId) {
+        setSessionId(newId);
+      }
     }
-  }, [messages, isTyping, onSaveSession]);
+  }, [messages, isTyping, onSaveSession, sessionId]);
+
+  // Restore context from history on load
+  useEffect(() => {
+    const lastCardMsg = [...messages].reverse().find(m => m.type === 'PROPERTY_CARDS' && m.data);
+    if (lastCardMsg && Array.isArray(lastCardMsg.data)) {
+      setLastRecommended(lastCardMsg.data as Property[]);
+    }
+  }, []); // Run once on mount to restore context
+
 
   const formatMessageText = (text: string) => {
     if (!text) return null;
@@ -247,6 +262,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     setMessages(prev => [...prev, newUserMsg]);
     setIsTyping(true);
 
+    // ... inside handleSend
     try {
       const lowerInput = userText.toLowerCase();
       const signKeywords = ['签', '租', '定', 'sign', 'book', 'contract'];
@@ -290,49 +306,88 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       const contextString = relevantProperties.length > 0
         ? `\n\n[检索到的相关房源数据 (参考这些数据回答，如果合适请推荐)]: ${JSON.stringify(contextData)}`
-        : `\n\n[未检索到特定房源，请根据通用知识回答，或询问用户更多需求]`;
+        : `\n\n`; // Empty if no search results, don't force generic unless needed
 
       const systemPrompt = `你是一个专业的AI租房顾问“智寓AI”。
       用户当前的城市是：${currentCity}。你的所有推荐必须严格限制在这个城市。
-      请语气亲切、专业。回答请简练，不要长篇大论。`;
-      // 在 HomeScreen.tsx 约 293 行附近修改
+      请语气亲切、专业。回答请简练，不要长篇大论。
+      **重要**：如果用户询问之前推荐过的房源（如“这套”、“第一套”），请根据上下文历史中的[User was shown properties]信息进行回答。`;
+
+      // Build History
+      const historyPayload = messages.slice(-10).map(msg => {
+        let content = msg.text || '';
+        if (msg.sender === 'ai' && msg.type === 'PROPERTY_CARDS' && Array.isArray(msg.data)) {
+          const props = msg.data as Property[];
+          content += `\n[System: User was shown these properties: ${JSON.stringify(props.map(p => ({ id: p.id, title: p.title, price: p.price, location: p.location })))}]`;
+        }
+        return {
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: content
+        };
+      });
+
       const apiKey = process.env.API_KEY || "";
       const baseUrl = process.env.API_BASE_URL || "";
-      console.log("Using Proxy (OpenAI Format):", baseUrl);
 
       let aiResponseText = "";
+      const maxRetries = 3;
 
       try {
-        const response = await fetch(`${baseUrl}/v1/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: 'gemini-3-flash-preview',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userText + contextString }
-            ],
-            stream: false
-          })
-        });
+        let response;
+        for (let i = 0; i < maxRetries; i++) {
+          try {
+            response = await fetch(`${baseUrl}/v1/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify({
+                model: 'gemini-3-flash-preview',
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  ...historyPayload, // Inject History
+                  { role: 'user', content: userText + contextString }
+                ],
+                stream: false
+              })
+            });
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error?.message || `HTTP ${response.status}`);
+            if (response.status === 503) {
+              // ... retries
+              console.warn(`Attempt ${i + 1} failed with 503. Retrying...`);
+              await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1)));
+              continue;
+            }
+
+            if (!response.ok) {
+              const errData = await response.json();
+              throw new Error(errData.error?.message || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            aiResponseText = data.choices[0]?.message?.content || "";
+            break;
+          } catch (networkErr: any) {
+            if (i === maxRetries - 1) throw networkErr;
+            console.warn(`Network attempt ${i + 1} failed. Retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        // ... (rest of error handling)
+
+        if (!aiResponseText && !response?.ok) {
+          throw new Error("Service temporarily unavailable after retries");
         }
 
-        const data = await response.json();
-        aiResponseText = data.choices[0]?.message?.content || "";
-
       } catch (err: any) {
+        console.error("API Error details:", err);
         if (err.message?.includes('429')) {
           aiResponseText = "抱歉，AI 思考次数已达免费额度上限。请稍等一分钟后再试。";
+        } else if (err.message?.includes('503') || err.message?.includes('overloaded')) {
+          aiResponseText = "抱歉，当前 AI 服务繁忙（Google Gemini 模型高负载）。请稍后再试。";
         } else {
-          console.error("Proxy Error:", err);
-          aiResponseText = `抱歉，通讯出现状况: ${err.message}`;
+          aiResponseText = `抱歉，通讯出现状况: ${err.message || "未知错误"}`;
         }
       }
 
@@ -404,26 +459,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     </motion.div>
   );
 
+  const AI_SUGGESTIONS = [
+    "帮我找南山科技园附近，租金8000左右的两室一厅",
+    "想要一个带大阳台的房子，一定要可以养宠物",
+    "推荐几个高性价比的合租房，最好全是女生",
+    "我在福田上班，通勤时间30分钟内的房源有哪些？"
+  ];
+
   const SuggestionPills = () => (
-    <div className="w-full px-6 mt-4">
-      <div className="flex items-center gap-2 mb-4 px-1">
+    <div className="w-full px-6 mt-2">
+      <div className="flex items-center gap-2 mb-3 px-1">
         <Icon name="auto_awesome" size={14} className="text-indigo-500" />
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px]">
-          INSIGHTS · {currentScenario.label}
+          AI 猜你想问
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        {currentScenario.items.map((item, i) => (
+      <div className="flex flex-col gap-3">
+        {AI_SUGGESTIONS.map((text, i) => (
           <motion.button
             key={i}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => { setInputValue(item.text); }}
-            className="bg-white/50 hover:bg-white border border-slate-100 flex items-center justify-start px-4 gap-3 text-slate-700 text-sm py-4 rounded-2xl transition-all shadow-[0_4px_12px_rgba(0,0,0,0.02)]"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => { setInputValue(text); }}
+            className="w-full bg-white/60 hover:bg-white border border-slate-100 px-5 py-4 rounded-xl text-left shadow-sm hover:shadow-md transition-all group"
           >
-            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-indigo-500 transition-colors">
-              <Icon name={item.icon} size={18} />
-            </div>
-            <span className="font-bold text-xs truncate">{item.text}</span>
+            <span className="text-sm text-slate-700 font-medium leading-relaxed group-hover:text-indigo-900 transition-colors">
+              {text}
+            </span>
           </motion.button>
         ))}
       </div>
@@ -431,10 +492,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
 
   const DailyPickCarousel = () => (
-    <div className="w-full mb-10 mt-6">
-      <div className="px-6 mb-5 flex justify-between items-end">
+    <div className="w-full mb-8 mt-4">
+      <div className="px-6 mb-4 flex justify-between items-end">
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">今日精选</h2>
-        <span className="text-xs font-bold text-indigo-600">查看更多</span>
+        <button onClick={onExploreMore} className="text-xs font-bold text-indigo-600 active:opacity-70">查看更多</button>
       </div>
       <div className="overflow-x-auto no-scrollbar px-6 pb-2 snap-x snap-mandatory whitespace-nowrap">
         {properties.length > 0 ? properties.map(p => (
@@ -450,17 +511,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
 
   const Header = () => (
-    <header className="flex justify-between items-center px-6 py-5 pt-safe-top sticky top-0 bg-transparent z-30 transition-all">
+    <header className="flex justify-between items-center px-6 py-5 pt-safe-top absolute top-0 left-0 w-full bg-transparent z-30 pointer-events-none">
       <button
         onClick={onOpenMenu}
-        className="group flex flex-col justify-center items-start gap-1 p-3 -ml-3 rounded-full hover:bg-white/40 transition-all active:scale-95"
+        className="group flex flex-col justify-center items-start gap-1 p-3 -ml-3 rounded-full hover:bg-white/40 transition-all active:scale-95 pointer-events-auto"
       >
         <span className="w-6 h-0.5 bg-slate-900 rounded-full group-hover:w-7 transition-all"></span>
         <span className="w-4 h-0.5 bg-slate-900 rounded-full group-hover:w-6 transition-all"></span>
       </button>
 
       {userPreferences && (
-        <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm">
+        <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white shadow-sm pointer-events-auto">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
           <span className="text-[10px] font-bold text-slate-600">
             寻找: {userPreferences.budgetRange[1] < 100000 ? `${userPreferences.budgetRange[1]}元以内` : '不限'}
@@ -476,7 +537,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="flex flex-col h-[100dvh] bg-[#f8fafc] relative overflow-hidden">
         <Header />
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-6 px-5">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-6 px-5 min-h-0">
           <div className="py-4 space-y-8">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -527,25 +588,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="px-6 pb-safe-bottom bg-[#f8fafc]">
+        <div className="px-6 pb-2 bg-[#f8fafc] flex-shrink-0">
           <motion.div
             layoutId="orb-input"
-            className="flex items-end gap-3 bg-white rounded-[32px] px-3 py-2.5 shadow-xl shadow-slate-200/50 border border-white mb-6"
+            className="flex items-end gap-3 bg-white rounded-[32px] px-3 py-2.5 shadow-xl shadow-slate-200/50 border border-white mb-2"
           >
             <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={`在${currentCity}找房...`}
-              className="flex-1 bg-transparent border-none outline-none text-slate-900 placeholder-slate-300 text-[15px] py-3 pl-3 max-h-24 resize-none"
+              className="flex-1 min-w-0 bg-transparent border-none outline-none text-slate-900 placeholder-slate-300 text-[16px] py-3 pl-3 max-h-24 resize-none"
               rows={1}
             />
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 shrink-0">
               {inputValue.trim() ? (
-                <button onClick={handleSend} className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all">
+                <button onClick={handleSend} className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all shrink-0">
                   <Icon name="arrow_upward" size={20} />
                 </button>
               ) : (
-                <button onClick={handleStartListening} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
+                <button onClick={handleStartListening} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors shrink-0">
                   <Icon name="mic" size={22} />
                 </button>
               )}
@@ -562,51 +623,78 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     <div className="flex flex-col h-[100dvh] bg-[#f8fafc] relative">
       <Header />
 
-      <div className="flex-1 flex flex-col items-center justify-center -mt-16">
-        <div className="mb-10 flex flex-col items-center">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-16 h-16 bg-white rounded-[24px] flex items-center justify-center mb-6 shadow-2xl shadow-slate-200 border border-slate-50"
-          >
-            <Icon name="smart_toy" className="text-indigo-600" size={32} />
-          </motion.div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">你好, Peterleo</h1>
-          <p className="text-slate-400 text-sm mt-2">今天想去哪里看看？</p>
-        </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar w-full min-h-0">
+        <div className="min-h-full flex flex-col items-center justify-center py-6">
+          <div className="mb-8 flex flex-col items-center mt-12">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">你好，我是智寓</h1>
+            <p className="text-slate-400 text-sm mt-2 font-medium">您的 AI 租房专家</p>
+          </div>
 
-        <DailyPickCarousel />
-        <SuggestionPills />
+          <DailyPickCarousel />
+          <SuggestionPills />
+        </div>
       </div>
 
-      <div className="px-6 pb-safe-bottom">
+      <div className="px-6 pb-safe-bottom flex-shrink-0">
         <motion.div
           layoutId="orb-input"
-          className="bg-white/80 backdrop-blur-2xl rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white p-2.5 pl-8 flex items-center gap-3 relative group overflow-hidden mb-6"
+          className={`bg-white/80 backdrop-blur-2xl rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white p-2.5 pl-8 flex items-center gap-3 relative group overflow-hidden mb-6 transition-all duration-300 ${isVoiceMode ? 'pl-2.5' : 'pl-8'}`}
         >
           {/* Neon Glow Effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-cyan-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
 
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={userPreferences ? `寻找 ${userPreferences.workLocation} 附近...` : `输入任意找房需求...`}
-            className="flex-1 text-[17px] font-medium placeholder-slate-300 text-slate-900 outline-none h-14 bg-transparent"
-          />
+          {isVoiceMode ? (
+            <div className="flex-1 flex gap-2 w-full">
+              <button
+                onClick={handleStartListening}
+                className="flex-1 h-14 bg-slate-900 rounded-full flex items-center justify-center gap-2 text-white font-bold shadow-xl active:scale-95 transition-all"
+              >
+                <Icon name="mic" size={20} className="animate-pulse" />
+                <span>点击发语音</span>
+              </button>
+              <button
+                onClick={() => setIsVoiceMode(false)}
+                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
+              >
+                <Icon name="keyboard" size={24} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder={userPreferences ? `寻找 ${userPreferences.workLocation} 附近...` : `输入任意找房需求...`}
+                className="flex-1 min-w-0 text-[16px] font-medium placeholder-slate-300 text-slate-900 outline-none h-14 bg-transparent"
+              />
 
-          <div className="flex items-center gap-3 pr-3">
-            <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-slate-900 transition-colors">
-              <Icon name="add_circle" size={24} />
-            </button>
-            <button
-              onClick={handleStartListening}
-              className="w-12 h-12 rounded-[22px] bg-slate-900 flex items-center justify-center text-white shadow-xl active:scale-90 transition-all"
-            >
-              <Icon name="mic" size={20} />
-            </button>
-          </div>
+              <div className="flex items-center gap-3 pr-3 shrink-0">
+                {!inputValue.trim() && (
+                  <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-slate-900 transition-colors shrink-0">
+                    <Icon name="add_circle" size={24} />
+                  </button>
+                )}
+
+                {inputValue.trim() ? (
+                  <button
+                    onClick={handleSend}
+                    className="w-12 h-12 rounded-[22px] bg-indigo-600 flex items-center justify-center text-white shadow-xl active:scale-90 transition-all shrink-0"
+                  >
+                    <Icon name="arrow_upward" size={24} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsVoiceMode(true)}
+                    className="w-12 h-12 rounded-[22px] bg-slate-900 flex items-center justify-center text-white shadow-xl active:scale-90 transition-all shrink-0"
+                  >
+                    <Icon name="mic" size={20} />
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </motion.div>
       </div>
 

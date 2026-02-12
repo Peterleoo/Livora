@@ -296,7 +296,7 @@ const Sidebar: React.FC<{
 
   const HistoryItem: React.FC<{ item: ChatSession }> = ({ item }) => (
     <button
-      onClick={() => { onNavigate('HOME'); onClose(); }}
+      onClick={() => { onNavigate('HOME', { session: item }); onClose(); }}
       className="w-full text-left p-3 rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-3 group"
     >
       <span className="text-sm font-medium text-slate-700 truncate group-hover:text-slate-900 flex-1">{item.title}</span>
@@ -451,7 +451,7 @@ const App: React.FC = () => {
   // Chat Sessions Storage
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('chatSessions');
-    return saved ? JSON.parse(saved) : SIDEBAR_SESSIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Dynamic Data State
@@ -480,9 +480,14 @@ const App: React.FC = () => {
 
   // Navigation Data State
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [signedPropertyId, setSignedPropertyId] = useState<string | null>(null); // New: Track which property is signed
+  const [signedPropertyId, setSignedPropertyId] = useState<string | null>(null);
   const [selectedBill, setSelectedBill] = useState<BillItem | null>(null);
   const [selectedContract, setSelectedContract] = useState<ContractItem | null>(null);
+
+  // Home Screen Reset & History State
+  const [homeKey, setHomeKey] = useState(0);
+  const [homeInitialMessages, setHomeInitialMessages] = useState<Message[]>([]);
+  const [homeSessionId, setHomeSessionId] = useState<string | undefined>(undefined);
 
   // Overlays
   const [showPropertyDetails, setShowPropertyDetails] = useState(false);
@@ -566,7 +571,7 @@ const App: React.FC = () => {
     setShowOnboarding(false);
   };
 
-  const navigate = (screen: ScreenName) => {
+  const navigate = (screen: ScreenName, params?: any) => {
     const protectedScreens: ScreenName[] = ['FAVORITES', 'BILLS', 'CONTRACTS', 'PROFILE', 'TENANT_HOME'];
 
     if (protectedScreens.includes(screen) && !isLoggedIn) {
@@ -574,6 +579,19 @@ const App: React.FC = () => {
       setCurrentScreen('LOGIN');
       setIsSidebarOpen(false);
       return;
+    }
+
+    // Handle Home Reset or History Loading
+    if (screen === 'HOME') {
+      if (params?.reset) {
+        setHomeKey(prev => prev + 1);
+        setHomeInitialMessages([]);
+        setHomeSessionId(undefined); // Reset session ID for new chat
+      } else if (params?.session) {
+        setHomeKey(prev => prev + 1);
+        setHomeInitialMessages(params.session.messages || []);
+        setHomeSessionId(params.session.id); // Set session ID for history loading
+      }
     }
 
     if (screen === 'HOME' && userMode === 'TENANT') {
@@ -612,28 +630,76 @@ const App: React.FC = () => {
     ));
   };
 
-  const handleSaveSession = (messages: Message[]) => {
-    if (messages.length === 0) return;
+  const handleSaveSession = React.useCallback((messages: Message[], currentSessionId?: string) => {
+    if (messages.length === 0) return '';
+
+    let savedSessionId = currentSessionId;
 
     setSessions(prev => {
-      // Find if we have an "active" session or create a new one for current messages
-      // For simplicity, we'll keep the most recent unique one
+      // Find if we have an "active" session (by ID) or create a new one
+      const existingIndex = prev.findIndex(s => s.id === currentSessionId);
+
       const firstUserMsg = messages.find(m => m.sender === 'user')?.text || '';
       const lastAIMsg = [...messages].reverse().find(m => m.sender === 'ai')?.text || '';
 
       const title = firstUserMsg.length > 15 ? firstUserMsg.substring(0, 15) + '...' : (firstUserMsg || '新对话');
       const preview = lastAIMsg.length > 30 ? lastAIMsg.substring(0, 30) + '...' : (lastAIMsg || '点击查看详情');
 
-      const newSession: ChatSession = {
-        id: 'active-session',
-        title: title,
-        preview: preview,
-        date: '今天',
-        tags: ['AI 推荐']
-      };
+      if (existingIndex !== -1) {
+        // Update existing session
+        const updatedSession = {
+          ...prev[existingIndex],
+          title: prev[existingIndex].title === '新对话' ? title : prev[existingIndex].title, // Keep original title unless it was generic? Or update dynamic? Let's keep dynamic for now or user preference. The user prompt says "history is one record per conversation". Updating title dynamically is fine.
+          preview: preview,
+          messages: messages,
+          date: '刚刚' // Update date on interaction
+        };
 
-      const filtered = prev.filter(s => s.id !== 'active-session');
-      const next = [newSession, ...filtered];
+        const next = [...prev];
+        next[existingIndex] = updatedSession;
+        // Move to top?
+        next.splice(existingIndex, 1);
+        next.unshift(updatedSession);
+
+        localStorage.setItem('chatSessions', JSON.stringify(next));
+        return next;
+
+      } else {
+        // Create new session
+        const newSessionId = `sess-${Date.now()}`;
+        savedSessionId = newSessionId; // Capture for return
+
+        const newSession: ChatSession = {
+          id: newSessionId,
+          title: title,
+          preview: preview,
+          date: '今天',
+          tags: ['AI 推荐'],
+          messages: messages
+        };
+
+        const next = [newSession, ...prev];
+        if (next.length > 20) next.pop();
+
+        localStorage.setItem('chatSessions', JSON.stringify(next));
+        return next;
+      }
+    });
+
+    return savedSessionId || '';
+  }, []);
+
+  const handleDeleteSession = (id: string) => {
+    setSessions(prev => {
+      const next = prev.filter(s => s.id !== id);
+      localStorage.setItem('chatSessions', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleDeleteSessions = (ids: string[]) => {
+    setSessions(prev => {
+      const next = prev.filter(s => !ids.includes(s.id));
       localStorage.setItem('chatSessions', JSON.stringify(next));
       return next;
     });
@@ -704,8 +770,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full bg-black overflow-hidden relative font-sans">
-      <div className="h-full w-full bg-white dark:bg-black">
+    <div className="h-full w-full bg-black overflow-hidden relative font-sans flex flex-col">
+      <div className="flex-1 w-full bg-white dark:bg-black overflow-hidden relative">
         <AnimatePresence mode="wait">
           {currentScreen === 'LOGIN' && (
             <motion.div key="login" className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -724,6 +790,9 @@ const App: React.FC = () => {
 
           {currentScreen === 'HOME' && (
             <HomeScreen
+              key={`home-${homeKey}`} // Key force remount for reset/history
+              initialMessages={homeInitialMessages} // Pass history messages
+              initialSessionId={homeSessionId} // Pass initial session ID
               properties={filteredProperties} // Use filtered properties
               onPropertyClick={(id) => { setSelectedPropertyId(id); setShowPropertyDetails(true); }}
               onOpenMenu={() => setIsSidebarOpen(true)}
@@ -734,6 +803,7 @@ const App: React.FC = () => {
               currentCity={currentCity}
               userPreferences={userPreferences} // Pass prefs to Home for visual feedback
               onSaveSession={handleSaveSession}
+              onExploreMore={() => navigate('EXPLORE')}
             />
           )}
 
@@ -809,7 +879,16 @@ const App: React.FC = () => {
           )}
 
           {currentScreen === 'HISTORY' && (
-            <HistoryScreen onBack={() => navigate('HOME')} onSelectSession={() => { }} />
+            <HistoryScreen
+              sessions={sessions}
+              onBack={() => navigate('HOME')}
+              onSelectSession={(id) => {
+                const session = sessions.find(s => s.id === id);
+                if (session) navigate('HOME', { session });
+              }}
+              onDeleteSession={handleDeleteSession}
+              onDeleteSessions={handleDeleteSessions}
+            />
           )}
 
           {currentScreen === 'SETTINGS' && (
