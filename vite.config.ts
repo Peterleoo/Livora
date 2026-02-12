@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -10,7 +11,23 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        manifest: false, // 已经有 public/manifest.json 了，或者在这里配置
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          // 确保 index.html 始终被视为入口
+          navigateFallback: '/index.html',
+          // 排除特定的 Vercel 路由或 API
+          navigateFallbackDenylist: [/^\/v1/],
+        },
+        devOptions: {
+          enabled: true
+        }
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
